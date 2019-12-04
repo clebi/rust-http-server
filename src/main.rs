@@ -1,20 +1,30 @@
+pub mod threadpool;
+
 use std::fs;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::thread;
 use std::time::Duration;
+use threadpool::ThreadPool;
 
 fn main() {
   let listener = TcpListener::bind("127.0.0.1:7879").unwrap();
+  let pool = ThreadPool::new(4);
 
   for stream in listener.incoming() {
     let stream = stream.unwrap();
     println!("Connection established!");
-    handle_connection(stream);
+
+    pool.execute(move || {
+      handle_connection(stream);
+    });
   }
 }
 
+/// Handlers connection initiated by the tcp listener
+/// 
+/// The stream contains data sent by the client
 fn handle_connection(mut stream: TcpStream) {
   let mut buffer = [0; 1024];
   stream.read(&mut buffer).unwrap();
